@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGetPackageVisualizer", "NuGetPackageVisualizer.csproj", "{FDDDC704-5E29-4F18-8197-06B9FB447AB6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{016CB3D3-DF85-45A2-AD7E-5FED6732DF76}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\NuGet.Config = .nuget\NuGet.Config
+		.nuget\NuGet.exe = .nuget\NuGet.exe
+		.nuget\NuGet.targets = .nuget\NuGet.targets
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|Mixed Platforms = Debug|Mixed Platforms
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|Mixed Platforms = Release|Mixed Platforms
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FDDDC704-5E29-4F18-8197-06B9FB447AB6}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{FDDDC704-5E29-4F18-8197-06B9FB447AB6}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{FDDDC704-5E29-4F18-8197-06B9FB447AB6}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{FDDDC704-5E29-4F18-8197-06B9FB447AB6}.Debug|x86.ActiveCfg = Debug|x86
+		{FDDDC704-5E29-4F18-8197-06B9FB447AB6}.Debug|x86.Build.0 = Debug|x86
+		{FDDDC704-5E29-4F18-8197-06B9FB447AB6}.Release|Any CPU.ActiveCfg = Release|x86
+		{FDDDC704-5E29-4F18-8197-06B9FB447AB6}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{FDDDC704-5E29-4F18-8197-06B9FB447AB6}.Release|Mixed Platforms.Build.0 = Release|x86
+		{FDDDC704-5E29-4F18-8197-06B9FB447AB6}.Release|x86.ActiveCfg = Release|x86
+		{FDDDC704-5E29-4F18-8197-06B9FB447AB6}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
