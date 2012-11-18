@@ -8,3 +8,5 @@ Using different colors for each package, you will be able to monitor of you are 
 Example output:
 
 ![Example output](https://raw.github.com/ThomasArdal/NuGetPackageVisualizer/master/example.png)
+
+[![Make a donation](http://i3.codeplex.com/Download?ProjectName=msbuildshellex&DownloadId=237259)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=KR2FXHQX44EQJ&lc=DK&item_name=Thomas%20Ardal&item_number=NuGetPackageVisualizer&no_note=0&cn=Add%20special%20instructions%20to%20the%20seller%3a&no_shipping=2&currency_code=DKK&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted)
