@@ -7,4 +7,4 @@ Using different colors for each package, you will be able to monitor of you are 
 
 Example output:
 
-![Example output](example.png)
+![Example output](https://raw.github.com/ThomasArdal/NuGetPackageVisualizer/master/example.png)
