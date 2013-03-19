@@ -72,7 +72,10 @@ namespace NuGetPackageVisualizer
         private List<PackageViewModel> GeneratePackages(IEnumerable<string> packageFiles)
         {
             var packages = new List<PackageViewModel>();
-            var feedContext = new FeedContext_x0060_1(new Uri("http://nuget.org/api/v2/"));
+            var feedContext = new FeedContext_x0060_1(new Uri("http://nuget.org/api/v2/"))
+                {
+                    IgnoreMissingProperties = true
+                };
             foreach (var file in packageFiles)
             {
                 var packagesConfig = XDocument.Load(file);
