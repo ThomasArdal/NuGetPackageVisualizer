@@ -27,8 +27,13 @@ namespace NuGetPackageVisualizer
         [Example("-file:\"c:\\my projects\\proj\\packages.config\"")]
         public string File { get; set; }
 
-        [NamedArgument("output", "o", Default = "packages.dgml")]
-        [Description("Path to the generated DGML file. Default: \"packages.dgml\".")]
+        [NamedArgument("outputtype", "ot", Default = "dgml")]
+        [Description("Sets the type of the output file. The following file types are supported: dgml, graphviz.")]
+        [Example("-outputtype:dgml")]
+        public string OutputType { get; set; }
+
+        [NamedArgument("output", "o")]
+        [Description("Path to the generated DGML file. Default: \"packages.dgml\" or \"packages.dot\".")]
         [Example("-output:.\\packages.dgml")]
         public string Output { get; set; }
 
@@ -99,48 +104,15 @@ namespace NuGetPackageVisualizer
 
         private void GenerateFile(List<PackageViewModel> packages)
         {
-            XNamespace ns = "http://schemas.microsoft.com/vs/2009/dgml";
-
-            var nodes =
-                packages
-                    .Select(
-                        package =>
-                            new XElement(ns + "Node",
-                                new XAttribute("Id", package.Id),
-                                new XAttribute("Label", string.Format("{0} ({1})", package.NugetId, package.LocalVersion)),
-                                new XAttribute("Background", GenerateBackgroundColor(packages, package))))
-                    .ToList();
-
-            var links =
-                (packages
-                    .SelectMany(
-                        package => package.Dependencies, (package, dep) =>
-                            new XElement(ns + "Link",
-                                new XAttribute("Source", package.Id),
-                                new XAttribute("Target", packages.Any(x => x.NugetId == dep.NugetId && x.LocalVersion == dep.Version) ? packages.First(x => x.NugetId == dep.NugetId && x.LocalVersion == dep.Version).Id : string.Format("{0} ({1})", dep.NugetId, dep.Version)))))
-                .ToList();
-
-            var document =
-                new XDocument(
-                    new XDeclaration("1.0", "utf-8", string.Empty),
-                    new XElement(ns + "DirectedGraph", new XElement(ns + "Nodes", nodes), new XElement(ns + "Links", links)));
-
-            document.Save(Output);
-        }
-
-        private string GenerateBackgroundColor(IEnumerable<PackageViewModel> packages, PackageViewModel package)
-        {
-            if (package.LocalVersion != package.RemoteVersion)
+            switch (OutputType)
             {
-                return "#FF0000";
+                case "dgml":
+                    new DGMLWriter().Write(packages, Output);
+                    break;
+                case "graphviz":
+                    new GraphvizWriter().Write(packages, Output);
+                    break;
             }
-
-            if (packages.Any(p => p.NugetId == package.NugetId && p.LocalVersion != package.LocalVersion))
-            {
-                return "#FCE428";
-            }
-            
-            return "#15FF00";
         }
 
         private bool Valid()

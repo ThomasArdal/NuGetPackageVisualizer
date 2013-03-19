@@ -56,6 +56,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DependencyViewModel.cs" />
+    <Compile Include="DGMLWriter.cs" />
+    <Compile Include="GraphvizWriter.cs" />
+    <Compile Include="IPackageWriter.cs" />
     <Compile Include="PackageViewModel.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -69,7 +72,9 @@
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
+    <None Include="app.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="packages.config" />
     <None Include="Service References\NuGetService\service.edmx" />
   </ItemGroup>
