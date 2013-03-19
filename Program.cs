@@ -84,7 +84,7 @@ namespace NuGetPackageVisualizer
                 {
                     var id = package.Attribute("id").Value;
                     var version = package.Attribute("version").Value;
-                    var remotePackage = feedContext.Packages.Where(x => x.Id == id && x.IsLatestVersion).FirstOrDefault();
+                    var remotePackage = feedContext.Packages.Where(x => x.Id == id && x.IsLatestVersion && !x.IsPrerelease).FirstOrDefault();
                     if (remotePackage == null) continue;
                     if (packages.Any(p => p.NugetId == id && p.LocalVersion == version)) continue;
                     packages.Add(new PackageViewModel
