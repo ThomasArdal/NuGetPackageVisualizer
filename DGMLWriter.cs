@@ -14,7 +14,7 @@ namespace NuGetPackageVisualizer
             }
 
             XNamespace ns = "http://schemas.microsoft.com/vs/2009/dgml";
-
+            var colors = new DgmlColorConfiguration();
             var nodes =
                 packages
                     .Select(
@@ -22,7 +22,7 @@ namespace NuGetPackageVisualizer
                             new XElement(ns + "Node",
                                 new XAttribute("Id", package.Id),
                                 new XAttribute("Label", string.Format("{0} ({1})", package.NugetId, package.LocalVersion)),
-                                new XAttribute("Background", GenerateBackgroundColor(packages, package))))
+                                new XAttribute("Background", GraphHelper.GenerateBackgroundColor(packages, package, colors))))
                     .ToList();
 
             var links =
@@ -40,21 +40,6 @@ namespace NuGetPackageVisualizer
                     new XElement(ns + "DirectedGraph", new XElement(ns + "Nodes", nodes), new XElement(ns + "Links", links)));
 
             document.Save(file);
-        }
-
-        private string GenerateBackgroundColor(IEnumerable<PackageViewModel> packages, PackageViewModel package)
-        {
-            if (package.LocalVersion != package.RemoteVersion)
-            {
-                return "#FF0000";
-            }
-
-            if (packages.Any(p => p.NugetId == package.NugetId && p.LocalVersion != package.LocalVersion))
-            {
-                return "#FCE428";
-            }
-
-            return "#15FF00";
         }
     }
 }

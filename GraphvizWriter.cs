@@ -12,12 +12,17 @@ namespace NuGetPackageVisualizer
             {
                 file = "packages.dot";
             }
-
+            
+            var colors = new GraphVizColorConfiguration();
             var sb = new StringBuilder();
             sb.AppendLine("digraph packages {");
+            sb.AppendLine(" node [shape=box, style=\"rounded,filled\"]");
             foreach (var package in packages)
-            {
-                sb.Append(" ").Append("\"").Append(package.NugetId).AppendLine("\"");
+            {                                
+                sb.Append(" ").AppendFormat("\"{0}\"[fillcolor=\"{1}\"]", 
+                    package.NugetId,
+                    GraphHelper.GenerateBackgroundColor(packages, package, colors)).AppendLine();
+
                 foreach (var dep in package.Dependencies)
                 {
                     sb.Append(" ")

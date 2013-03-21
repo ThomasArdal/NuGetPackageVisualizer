@@ -56,8 +56,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DependencyViewModel.cs" />
+    <Compile Include="DgmlColorConfiguration.cs" />
     <Compile Include="DGMLWriter.cs" />
+    <Compile Include="GraphHelper.cs" />
+    <Compile Include="GraphVizColorConfiguration.cs" />
     <Compile Include="GraphvizWriter.cs" />
+    <Compile Include="IColorConfiguration.cs" />
     <Compile Include="IPackageWriter.cs" />
     <Compile Include="PackageViewModel.cs" />
     <Compile Include="Program.cs" />
