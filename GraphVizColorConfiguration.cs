@@ -9,12 +9,12 @@
 
         public string PackageHasDifferentVersionsColor
         {
-            get { return "forestgreen"; }
+            get { return "grey"; }
         }
 
         public string DefaultColor
         {
-            get { return "white"; }
+            get { return "forestgreen"; }
         }
     }
 }
