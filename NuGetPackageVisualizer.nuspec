@@ -1,0 +1,19 @@
+﻿<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <version>$version$</version>
+    <authors>ThomasArdal</authors>
+    <owners />
+    <dependencies>
+      <dependency id="GoCommando" version="0.3" />
+    </dependencies>
+    <id>NuGetPackageVisualizer</id>
+    <title>NuGetPackageVisualizer</title>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A small tool able to generate a DGML file visualizing your NuGet references.</description>
+    <projectUrl>https://github.com/ThomasArdal/NuGetPackageVisualizer</projectUrl>
+  </metadata>
+  <files>
+    <file src="bin\$Configuration$\NuGetPackageVisualizer.exe" target="tools\NuGetPackageVisualizer.exe" />
+  </files>
+</package>
