@@ -65,7 +65,11 @@ namespace NuGetPackageVisualizer
                 if (!(Path.GetDirectoryName(packageFile).EndsWith(".nuget")))
                 {
                     var projectPackages = this.GeneratePackages(packageFile);
-                    packages.AddRange(projectPackages);
+                    foreach (var package in projectPackages)
+                    {
+                        if (package.LocalVersion == "" || packages.Any(p => p.NugetId == package.NugetId && p.LocalVersion == package.LocalVersion)) continue;
+                        packages.Add(package);
+                    }
                     this.GenerateFile(projectPackages, BuildFilePath(Path.GetFileName(Path.GetDirectoryName(packageFile))));
                 }
 
