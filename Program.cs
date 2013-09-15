@@ -122,6 +122,12 @@ namespace NuGetPackageVisualizer
                             }).ToArray()
                     });
 
+                    foreach (var dependency in packages.Last().Dependencies)
+                    {
+                        var pack = dependencies.FirstOrDefault(x => x.NugetId == dependency.NugetId && x.Version == dependency.Version);
+                        if (pack == null) continue;
+                        dependencies.Remove(pack);
+                    }
 
                 }
                 packages.Add(
@@ -211,8 +217,15 @@ namespace NuGetPackageVisualizer
 
         private string BuildFilePath(string name)
         {
+            
+            return string.Format("{0}.{1}",name, GetFileExtension());
+        }
 
-            return string.Format("{0}.{1}",name, OutputType);
+        private string GetFileExtension()
+        {
+            if (OutputType == "graphviz") return "dot";
+            return OutputType;
+
         }
     }
 }
