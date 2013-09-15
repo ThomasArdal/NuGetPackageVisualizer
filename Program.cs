@@ -84,6 +84,7 @@ namespace NuGetPackageVisualizer
             foreach (var file in packageFiles)
             {
                 var packagesConfig = XDocument.Load(file);
+                var dependencies = new List<DependencyViewModel>();
 
                 foreach (var package in packagesConfig.Descendants("package"))
                 {
@@ -91,6 +92,7 @@ namespace NuGetPackageVisualizer
                     var version = package.Attribute("version").Value;
                     var remotePackage = feedContext.Packages.OrderByDescending(x => x.Version).Where(x => x.Id == id && x.IsLatestVersion && !x.IsPrerelease).FirstOrDefault();
                     if (remotePackage == null) continue;
+                    dependencies.Add(new DependencyViewModel { NugetId = id, Version = version }); 
                     if (packages.Any(p => p.NugetId == id && p.LocalVersion == version)) continue;
                     packages.Add(new PackageViewModel
                     {
@@ -105,6 +107,15 @@ namespace NuGetPackageVisualizer
                             }).ToArray()
                     });
                 }
+                packages.Add(
+                    new PackageViewModel
+                    {
+                        RemoteVersion = "",
+                        LocalVersion = "",
+                        NugetId = Path.GetFileName(Path.GetDirectoryName(file)),
+                        Id = Guid.NewGuid().ToString(),
+                        Dependencies = dependencies.ToArray()
+                    });
             }
 
             return packages;
