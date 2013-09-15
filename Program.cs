@@ -32,9 +32,9 @@ namespace NuGetPackageVisualizer
         [Example("-outputtype:dgml")]
         public string OutputType { get; set; }
 
-        [NamedArgument("output", "o")]
-        [Description("Path to the generated DGML file. Default: \"packages.dgml\" or \"packages.dot\".")]
-        [Example("-output:.\\packages.dgml")]
+        [NamedArgument("output", "o", Default = "packages")]
+        [Description("The name of the generated file for the whole repository. Default: \"packages\".")]
+        [Example("-output:.\\packages")]
         public string Output { get; set; }
 
         [NamedArgument("repositoryuri", "ru", Default = @"http://nuget.org/api/v2/")]
@@ -59,8 +59,18 @@ namespace NuGetPackageVisualizer
             }
 
             var packageFiles = GetFiles();
-            var packages = GeneratePackages(packageFiles);
-            GenerateFile(packages);
+            var packages = new List<PackageViewModel>();
+            foreach (var packageFile in packageFiles)
+            {
+                if (!(Path.GetDirectoryName(packageFile).EndsWith(".nuget")))
+                {
+                    var projectPackages = this.GeneratePackages(packageFile);
+                    packages.AddRange(projectPackages);
+                    this.GenerateFile(projectPackages, BuildFilePath(Path.GetFileName(Path.GetDirectoryName(packageFile))));
+                }
+
+            }
+            GenerateFile(packages, BuildFilePath(Output));
         }
 
         private IEnumerable<string> GetFiles()
@@ -74,16 +84,15 @@ namespace NuGetPackageVisualizer
             return packageFiles;
         }
 
-        private List<PackageViewModel> GeneratePackages(IEnumerable<string> packageFiles)
+        private List<PackageViewModel> GeneratePackages(string File)
         {
             var packages = new List<PackageViewModel>();
             var feedContext = new FeedContext_x0060_1(new Uri(RepositoryUrl))
                 {
                     IgnoreMissingProperties = true
                 };
-            foreach (var file in packageFiles)
-            {
-                var packagesConfig = XDocument.Load(file);
+
+            var packagesConfig = XDocument.Load(File);
                 var dependencies = new List<DependencyViewModel>();
 
                 foreach (var package in packagesConfig.Descendants("package"))
@@ -108,30 +117,31 @@ namespace NuGetPackageVisualizer
                                 return new DependencyViewModel {NugetId = strings[0], Version = strings[1]};
                             }).ToArray()
                     });
+
+
                 }
                 packages.Add(
                     new PackageViewModel
                     {
                         RemoteVersion = "",
                         LocalVersion = "",
-                        NugetId = Path.GetFileName(Path.GetDirectoryName(file)),
+                        NugetId = Path.GetFileName(Path.GetDirectoryName(File)),
                         Id = Guid.NewGuid().ToString(),
                         Dependencies = dependencies.ToArray()
                     });
-            }
 
             return packages;
         }
 
-        private void GenerateFile(List<PackageViewModel> packages)
+        private void GenerateFile(List<PackageViewModel> packages,string fileName)
         {
             switch (OutputType)
             {
                 case "dgml":
-                    new DGMLWriter().Write(packages, Output);
+                    new DGMLWriter().Write(packages, fileName);
                     break;
                 case "graphviz":
-                    new GraphvizWriter().Write(packages, Output);
+                    new GraphvizWriter().Write(packages, fileName);
                     break;
             }
         }
@@ -193,6 +203,12 @@ namespace NuGetPackageVisualizer
             }
 
             return packageFiles;
+        }
+
+        private string BuildFilePath(string name)
+        {
+
+            return string.Format("{0}.{1}",name, OutputType);
         }
     }
 }
