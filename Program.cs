@@ -32,6 +32,11 @@ namespace NuGetPackageVisualizer
         [Example("-outputtype:dgml")]
         public string OutputType { get; set; }
 
+        [NamedArgument("outputpath", "op", Default = "")]
+        [Description("Sets the root path where output files should be written. Default: \"\" the folder where NuGetVisualizer was run.")]
+        [Example("-outputpath:\"C:\\temp\"")]
+        public string OutputPath { get; set; }
+
         [NamedArgument("output", "o", Default = "packages")]
         [Description("The name of the generated file for the whole repository. Default: \"packages\".")]
         [Example("-output:.\\packages")]
@@ -217,8 +222,8 @@ namespace NuGetPackageVisualizer
 
         private string BuildFilePath(string name)
         {
-            
-            return string.Format("{0}.{1}",name, GetFileExtension());
+            if (!(OutputPath == string.Empty)) Directory.CreateDirectory(OutputPath);
+            return Path.Combine(OutputPath,string.Format("{0}.{1}",name, GetFileExtension()));
         }
 
         private string GetFileExtension()
