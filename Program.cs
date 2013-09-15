@@ -37,6 +37,11 @@ namespace NuGetPackageVisualizer
         [Example("-output:.\\packages.dgml")]
         public string Output { get; set; }
 
+        [NamedArgument("repositoryuri", "ru", Default = @"http://nuget.org/api/v2/")]
+        [Description("The URI of the NuGet repository to use for reference. Default: \"http://nuget.org/api/v2/\".")]
+        [Example("-repositoryuri:\"http://nuget.org/api/v2/\"")]
+        public string RepositoryUrl { get; set; }
+
         public static void Main(string[] args)
         {
             Console.WriteLine("============================");
@@ -72,7 +77,7 @@ namespace NuGetPackageVisualizer
         private List<PackageViewModel> GeneratePackages(IEnumerable<string> packageFiles)
         {
             var packages = new List<PackageViewModel>();
-            var feedContext = new FeedContext_x0060_1(new Uri("http://nuget.org/api/v2/"))
+            var feedContext = new FeedContext_x0060_1(new Uri(RepositoryUrl))
                 {
                     IgnoreMissingProperties = true
                 };
