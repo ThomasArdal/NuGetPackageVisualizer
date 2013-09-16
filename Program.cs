@@ -38,7 +38,7 @@ namespace NuGetPackageVisualizer
         public string OutputPath { get; set; }
 
         [NamedArgument("output", "o", Default = "packages")]
-        [Description("The name of the generated file for the whole repository. Default: \"packages\".")]
+        [Description("The name of the generated file for the whole source folder. Default: \"packages\".")]
         [Example("-output:.\\packages")]
         public string Output { get; set; }
 
@@ -46,6 +46,17 @@ namespace NuGetPackageVisualizer
         [Description("The URI of the NuGet repository to use for reference. Default: \"http://nuget.org/api/v2/\".")]
         [Example("-repositoryuri:\"http://nuget.org/api/v2/\"")]
         public string RepositoryUrl { get; set; }
+
+        [NamedArgument("wholediagram", "wd", Default = "false")]
+        [Description("Whether to generate a diagram for the whole source. Default: false.")]
+        [Example("-wholediagram:false")]
+        public bool WholeDiagram { get; set; }
+
+        [NamedArgument("projectdiagrams", "pd", Default = "false")]
+        [Description("Whether to generate diagram per project in the source folder. Default: false.")]
+        [Example("-projectdiagrams:false")]
+        public bool ProjectDiagrams { get; set; }
+
 
         public static void Main(string[] args)
         {
@@ -75,11 +86,11 @@ namespace NuGetPackageVisualizer
                         if (package.LocalVersion == "" || packages.Any(p => p.NugetId == package.NugetId && p.LocalVersion == package.LocalVersion)) continue;
                         packages.Add(package);
                     }
-                    this.GenerateFile(projectPackages, BuildFilePath(Path.GetFileName(Path.GetDirectoryName(packageFile))));
+                    if (ProjectDiagrams) GenerateFile(projectPackages, BuildFilePath(Path.GetFileName(Path.GetDirectoryName(packageFile))));
                 }
 
             }
-            GenerateFile(packages, BuildFilePath(Output));
+            if (WholeDiagram) GenerateFile(packages, BuildFilePath(Output));
         }
 
         private IEnumerable<string> GetFiles()
@@ -175,6 +186,12 @@ namespace NuGetPackageVisualizer
                 return false;
             }
 
+            if (WholeDiagramAndProjectDiagramsNotSpecified())
+            {
+                Console.WriteLine("You must specify either wholediagram and/or projectdiagrams.");
+                return false;
+            }
+
             if (!string.IsNullOrWhiteSpace(File) && !System.IO.File.Exists(File))
             {
                 Console.WriteLine("Could not find file: " + File);
@@ -198,6 +215,11 @@ namespace NuGetPackageVisualizer
         private bool FolderAndFileNotSpecified()
         {
             return string.IsNullOrWhiteSpace(Folder) && string.IsNullOrWhiteSpace(File);
+        }
+
+        private bool WholeDiagramAndProjectDiagramsNotSpecified()
+        {
+            return !(WholeDiagram || ProjectDiagrams);
         }
 
         private IEnumerable<string> DirSearch(string sDir)
