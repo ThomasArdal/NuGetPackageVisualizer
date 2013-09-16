@@ -14,7 +14,7 @@
 
         public string DefaultColor
         {
-            get { return "#15FF00"; }
+            get { return "#339933"; }
         }
     }
 }
