@@ -33,7 +33,7 @@ namespace NuGetPackageVisualizer
         public string OutputType { get; set; }
 
         [NamedArgument("outputpath", "op", Default = "")]
-        [Description("Sets the root path where output files should be written. Default: \"\" the folder where NuGetVisualizer was run.")]
+        [Description("Sets the root path where output files should be written. Default: \"\" the folder where NuGet Package Visualizer was run.")]
         [Example("-outputpath:\"C:\\temp\"")]
         public string OutputPath { get; set; }
 
@@ -47,16 +47,15 @@ namespace NuGetPackageVisualizer
         [Example("-repositoryuri:\"http://nuget.org/api/v2/\"")]
         public string RepositoryUrl { get; set; }
 
-        [NamedArgument("wholediagram", "wd", Default = "false")]
-        [Description("Whether to generate a diagram for the whole source. Default: false.")]
-        [Example("-wholediagram:false")]
+        [NamedArgument("wholediagram", "wd", Default = "true")]
+        [Description("Whether to generate a diagram for the whole source. Default: true.")]
+        [Example("-wholediagram:true")]
         public bool WholeDiagram { get; set; }
 
         [NamedArgument("projectdiagrams", "pd", Default = "false")]
         [Description("Whether to generate diagram per project in the source folder. Default: false.")]
         [Example("-projectdiagrams:false")]
         public bool ProjectDiagrams { get; set; }
-
 
         public static void Main(string[] args)
         {
@@ -78,18 +77,22 @@ namespace NuGetPackageVisualizer
             var packages = new List<PackageViewModel>();
             foreach (var packageFile in packageFiles)
             {
-                if (!(Path.GetDirectoryName(packageFile).EndsWith(".nuget")))
+                if (Path.GetDirectoryName(packageFile).EndsWith(".nuget")) continue;
+                
+                var projectPackages = GeneratePackages(packageFile);
+                foreach (
+                    var package in
+                        projectPackages.Where(
+                            package =>
+                                package.LocalVersion != "" &&
+                                !packages.Any(p => p.NugetId == package.NugetId && p.LocalVersion == package.LocalVersion)))
                 {
-                    var projectPackages = this.GeneratePackages(packageFile);
-                    foreach (var package in projectPackages)
-                    {
-                        if (package.LocalVersion == "" || packages.Any(p => p.NugetId == package.NugetId && p.LocalVersion == package.LocalVersion)) continue;
-                        packages.Add(package);
-                    }
-                    if (ProjectDiagrams) GenerateFile(projectPackages, BuildFilePath(Path.GetFileName(Path.GetDirectoryName(packageFile))));
+                    packages.Add(package);
                 }
-
+                
+                if (ProjectDiagrams) GenerateFile(projectPackages, BuildFilePath(Path.GetFileName(Path.GetDirectoryName(packageFile))));
             }
+
             if (WholeDiagram) GenerateFile(packages, BuildFilePath(Output));
         }
 
@@ -104,7 +107,7 @@ namespace NuGetPackageVisualizer
             return packageFiles;
         }
 
-        private List<PackageViewModel> GeneratePackages(string File)
+        private List<PackageViewModel> GeneratePackages(string file)
         {
             var packages = new List<PackageViewModel>();
             var feedContext = new FeedContext_x0060_1(new Uri(RepositoryUrl))
@@ -112,14 +115,21 @@ namespace NuGetPackageVisualizer
                     IgnoreMissingProperties = true
                 };
 
-            var packagesConfig = XDocument.Load(File);
+            var packagesConfig = XDocument.Load(file);
                 var dependencies = new List<DependencyViewModel>();
 
                 foreach (var package in packagesConfig.Descendants("package"))
                 {
                     var id = package.Attribute("id").Value;
                     var version = package.Attribute("version").Value;
-                    var remotePackage = feedContext.Packages.OrderByDescending(x => x.Version).Where(x => x.Id == id && x.IsLatestVersion && !x.IsPrerelease).FirstOrDefault();
+                    // ReSharper disable ReplaceWithSingleCallToFirstOrDefault
+                    var remotePackage =
+                        feedContext
+                            .Packages
+                            .OrderByDescending(x => x.Version)
+                            .Where(x => x.Id == id && x.IsLatestVersion && !x.IsPrerelease)
+                            .FirstOrDefault();
+                    // ReSharper restore ReplaceWithSingleCallToFirstOrDefault
 
                     dependencies.Add(new DependencyViewModel { NugetId = id, Version = version });
                     if (remotePackage == null) continue;
@@ -138,20 +148,25 @@ namespace NuGetPackageVisualizer
                             }).ToArray()
                     });
 
-                    foreach (var dependency in packages.Last().Dependencies)
+                    foreach (
+                        var pack in
+                            packages
+                                .Last()
+                                .Dependencies
+                                .Select(dependency =>
+                                    dependencies
+                                        .FirstOrDefault(x => x.NugetId == dependency.NugetId && x.Version == dependency.Version))
+                                .Where(pack => pack != null))
                     {
-                        var pack = dependencies.FirstOrDefault(x => x.NugetId == dependency.NugetId && x.Version == dependency.Version);
-                        if (pack == null) continue;
                         dependencies.Remove(pack);
                     }
-
                 }
                 packages.Add(
                     new PackageViewModel
                     {
                         RemoteVersion = "",
                         LocalVersion = "",
-                        NugetId = Path.GetFileName(Path.GetDirectoryName(File)),
+                        NugetId = Path.GetFileName(Path.GetDirectoryName(file)),
                         Id = Guid.NewGuid().ToString(),
                         Dependencies = dependencies.ToArray()
                     });
@@ -244,15 +259,13 @@ namespace NuGetPackageVisualizer
 
         private string BuildFilePath(string name)
         {
-            if (!(OutputPath == string.Empty)) Directory.CreateDirectory(OutputPath);
+            if (OutputPath != string.Empty) Directory.CreateDirectory(OutputPath);
             return Path.Combine(OutputPath,string.Format("{0}.{1}",name, GetFileExtension()));
         }
 
         private string GetFileExtension()
         {
-            if (OutputType == "graphviz") return "dot";
-            return OutputType;
-
+            return OutputType == "graphviz" ? "dot" : OutputType;
         }
     }
 }
