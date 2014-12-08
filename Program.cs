@@ -1,12 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Xml.Linq;
-using GoCommando;
+﻿using GoCommando;
 using GoCommando.Api;
 using GoCommando.Attributes;
 using NuGetPackageVisualizer.NuGetService;
+using System;
+using System.Collections.Generic;
+using System.Data.Services.Client;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Xml.Linq;
 
 namespace NuGetPackageVisualizer
 {
@@ -57,6 +59,16 @@ namespace NuGetPackageVisualizer
         [Example("-projectdiagrams:false")]
         public bool ProjectDiagrams { get; set; }
 
+        [NamedArgument("username", "u", Default = "")]
+        [Description("The user name for accessing a protected package feed. Default: \"\" (empty).")]
+        [Example("-username:jdoe")]
+        public string UserName { get; set; }
+
+        [NamedArgument("password", "pw", Default = "")]
+        [Description("The password for accessing a protected package feed. Default: \"\" (empty).")]
+        [Example("-password:XYZ")]
+        public string Password { get; set; }
+
         public static void Main(string[] args)
         {
             Console.WriteLine("============================");
@@ -78,7 +90,7 @@ namespace NuGetPackageVisualizer
             foreach (var packageFile in packageFiles)
             {
                 if (Path.GetDirectoryName(packageFile).EndsWith(".nuget")) continue;
-                
+
                 var projectPackages = GeneratePackages(packageFile);
                 foreach (
                     var package in
@@ -89,7 +101,7 @@ namespace NuGetPackageVisualizer
                 {
                     packages.Add(package);
                 }
-                
+
                 if (ProjectDiagrams) GenerateFile(projectPackages, BuildFilePath(Path.GetFileName(Path.GetDirectoryName(packageFile))));
             }
 
@@ -115,72 +127,121 @@ namespace NuGetPackageVisualizer
                     IgnoreMissingProperties = true
                 };
 
+            ApplyCredentials(feedContext);
+
             var packagesConfig = XDocument.Load(file);
-                var dependencies = new List<DependencyViewModel>();
+            var dependencies = new List<DependencyViewModel>();
 
-                foreach (var package in packagesConfig.Descendants("package"))
+            foreach (var package in packagesConfig.Descendants("package"))
+            {
+                var id = package.Attribute("id").Value;
+                var version = package.Attribute("version").Value;
+                // ReSharper disable ReplaceWithSingleCallToFirstOrDefault
+                var remotePackage =
+                    feedContext
+                        .Packages
+                        .OrderByDescending(x => x.Version)
+                        .Where(x => x.Id == id && x.IsLatestVersion && !x.IsPrerelease)
+                        .FirstOrDefault();
+                // ReSharper restore ReplaceWithSingleCallToFirstOrDefault
+
+                dependencies.Add(new DependencyViewModel { NugetId = id, Version = version });
+                if (remotePackage == null) continue;
+
+                if (packages.Any(p => p.NugetId == id && p.LocalVersion == version)) continue;
+                packages.Add(new PackageViewModel
                 {
-                    var id = package.Attribute("id").Value;
-                    var version = package.Attribute("version").Value;
-                    // ReSharper disable ReplaceWithSingleCallToFirstOrDefault
-                    var remotePackage =
-                        feedContext
-                            .Packages
-                            .OrderByDescending(x => x.Version)
-                            .Where(x => x.Id == id && x.IsLatestVersion && !x.IsPrerelease)
-                            .FirstOrDefault();
-                    // ReSharper restore ReplaceWithSingleCallToFirstOrDefault
+                    RemoteVersion = remotePackage.Version,
+                    LocalVersion = version,
+                    NugetId = id,
+                    Id = Guid.NewGuid().ToString(),
+                    Dependencies = remotePackage.Dependencies.Split(new[] { "|" }, StringSplitOptions.RemoveEmptyEntries).Select(x =>
+                        {
+                            var strings = x.Split(new[] { ':' });
+                            return new DependencyViewModel { NugetId = strings[0], Version = strings[1] };
+                        }).ToArray()
+                });
 
-                    dependencies.Add(new DependencyViewModel { NugetId = id, Version = version });
-                    if (remotePackage == null) continue;
-
-                    if (packages.Any(p => p.NugetId == id && p.LocalVersion == version)) continue;
-                    packages.Add(new PackageViewModel
-                    {
-                        RemoteVersion = remotePackage.Version,
-                        LocalVersion = version,
-                        NugetId = id,
-                        Id = Guid.NewGuid().ToString(),
-                        Dependencies = remotePackage.Dependencies.Split(new[] { "|" }, StringSplitOptions.RemoveEmptyEntries).Select(x =>
-                            {
-                                var strings = x.Split(new[] {':'});
-                                return new DependencyViewModel {NugetId = strings[0], Version = strings[1]};
-                            }).ToArray()
-                    });
-
-                    foreach (
-                        var pack in
-                            packages
-                                .Last()
-                                .Dependencies
-                                .Select(dependency =>
-                                    dependencies
-                                        .FirstOrDefault(x => x.NugetId == dependency.NugetId && x.Version == dependency.Version))
-                                .Where(pack => pack != null))
-                    {
-                        dependencies.Remove(pack);
-                    }
+                foreach (
+                    var pack in
+                        packages
+                            .Last()
+                            .Dependencies
+                            .Select(dependency =>
+                                dependencies
+                                    .FirstOrDefault(x => x.NugetId == dependency.NugetId && x.Version == dependency.Version))
+                            .Where(pack => pack != null))
+                {
+                    dependencies.Remove(pack);
                 }
-                packages.Add(
-                    new PackageViewModel
-                    {
-                        RemoteVersion = "",
-                        LocalVersion = "",
-                        NugetId = Path.GetFileName(Path.GetDirectoryName(file)),
-                        Id = Guid.NewGuid().ToString(),
-                        Dependencies = dependencies.ToArray()
-                    });
+            }
+            packages.Add(
+                new PackageViewModel
+                {
+                    RemoteVersion = "",
+                    LocalVersion = "",
+                    NugetId = Path.GetFileName(Path.GetDirectoryName(file)),
+                    Id = Guid.NewGuid().ToString(),
+                    Dependencies = dependencies.ToArray()
+                });
 
             return packages;
         }
 
-        private void GenerateFile(List<PackageViewModel> packages,string fileName)
+        private void ApplyCredentials(DataServiceContext dataServiceContext)
+        {
+            if (!string.IsNullOrEmpty(UserName))
+            {
+                if (string.IsNullOrEmpty(Password))
+                {
+                    promptForPassword();
+                }
+                dataServiceContext.Credentials = new NetworkCredential(UserName, Password);
+            }
+        }
+
+        private void promptForPassword()
+        {
+            Console.WriteLine("You have supplied a username only, please enter the password for accessing the protected feed:");
+            Console.ResetColor();
+
+            //from http://stackoverflow.com/a/3404522/1793
+            var pass = string.Empty;
+            ConsoleKeyInfo key;
+            do
+            {
+                key = Console.ReadKey(true);
+
+                // Backspace Should Not Work
+                if (key.Key != ConsoleKey.Backspace && key.Key != ConsoleKey.Enter)
+                {
+                    pass += key.KeyChar;
+                    Console.Write("*");
+                }
+                else
+                {
+                    if (key.Key == ConsoleKey.Backspace && pass.Length > 0)
+                    {
+                        pass = pass.Substring(0, (pass.Length - 1));
+                        Console.Write("\b \b");
+                    }
+                }
+            }
+            // Stops Receving Keys Once Enter is Pressed
+            while (key.Key != ConsoleKey.Enter);
+            Console.WriteLine();
+            Console.WriteLine("Thank you.");
+            Password = pass;
+        }
+
+        private void GenerateFile(List<PackageViewModel> packages, string fileName)
         {
             switch (OutputType)
             {
                 case "dgml":
                     new DGMLWriter().Write(packages, fileName);
                     break;
+
                 case "graphviz":
                     new GraphvizWriter().Write(packages, fileName);
                     break;
@@ -218,7 +279,7 @@ namespace NuGetPackageVisualizer
                 Console.WriteLine("Could not find folder: " + Folder);
                 return false;
             }
-            
+
             return true;
         }
 
@@ -260,7 +321,7 @@ namespace NuGetPackageVisualizer
         private string BuildFilePath(string name)
         {
             if (OutputPath != string.Empty) Directory.CreateDirectory(OutputPath);
-            return Path.Combine(OutputPath,string.Format("{0}.{1}",name, GetFileExtension()));
+            return Path.Combine(OutputPath, string.Format("{0}.{1}", name, GetFileExtension()));
         }
 
         private string GetFileExtension()
