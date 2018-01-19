@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -14,7 +15,9 @@ namespace NuGetPackageVisualizer
             {
                 file = "packages.dot";
             }
-            
+
+            Debug.WriteLine($"Writing {file}.");
+
             var colors = new GraphVizColorConfiguration();
             var sb = new StringBuilder();
             

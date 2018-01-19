@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Xml.Linq;
 
@@ -12,6 +13,8 @@ namespace NuGetPackageVisualizer
             {
                 file = "packages.dgml";
             }
+
+            Debug.WriteLine($"Writing {file}.");
 
             XNamespace ns = "http://schemas.microsoft.com/vs/2009/dgml";
             var colors = new DgmlColorConfiguration();
